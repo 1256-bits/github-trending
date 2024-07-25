@@ -19,6 +19,7 @@ async function get_trending_repos () {
 function main () {
   main_loop()
   setInterval(main_loop, TIME_MIN * 60 * 1000)
+  db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
 }
 
 function createTable (_, row) {
@@ -37,8 +38,15 @@ function updateOrInsert (row, item) {
 }
 
 async function main_loop () {
-    const data = await get_trending_repos()
-    data.each(item => {
-      db.get(`SELECT * FROM repos WHERE id = ${item.id}`, (_, row) => updateOrInsert(row, item))
-    })
+  const data = await get_trending_repos()
+  data.each(item => {
+    // The number of items is fixed at 30, so making a query for each item is probably fine.
+    db.get(`SELECT * FROM repos WHERE id = ${item.id}`, (_, row) => updateOrInsert(row, item))
+  })
+}
+
+function pruneDatabase (_, data) {
+  if (data.length > 30) {
+    db.run("DELETE FROM repos WHERE stars < (SELECT * FROM tee ORDER BY stars LIMIT -1 OFFSET 30)")
   }
+}

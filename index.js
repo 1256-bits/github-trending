@@ -17,12 +17,8 @@ async function get_trending_repos () {
 }
 
 function main () {
-  setInterval(async () => {
-    const data = await get_trending_repos()
-    data.each(item => {
-      db.get(`SELECT * FROM repos WHERE id = ${item.id}`, (_, row) => updateOrInsert(row, item))
-    })
-  }, TIME_MIN * 60 * 1000)
+  main_loop()
+  setInterval(main_loop, TIME_MIN * 60 * 1000)
 }
 
 function createTable (_, row) {
@@ -39,3 +35,10 @@ function updateOrInsert (row, item) {
     db.run(`UPDATE repos SET stars = ${item.stars} WHERE id = ${item.id}`)
   }
 }
+
+async function main_loop () {
+    const data = await get_trending_repos()
+    data.each(item => {
+      db.get(`SELECT * FROM repos WHERE id = ${item.id}`, (_, row) => updateOrInsert(row, item))
+    })
+  }

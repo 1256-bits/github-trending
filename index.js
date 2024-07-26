@@ -148,7 +148,7 @@ function getIntervalTime (args) {
 }
 
 function printHelp (type = "repl") { // type: "repl" | "cli"
-  console.log("Github trending repos v1")
+  console.log("=== Github trending repos v1 ===")
   const helpOptions = type === "repl" ?
     [
       { command: "get <ID | NAME>", info: "find a repository by id or name" },

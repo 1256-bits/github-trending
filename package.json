@@ -9,6 +9,7 @@
   "license": "MIT",
   "description": "",
   "dependencies": {
+    "colors": "^1.4.0",
     "sqlite3": "^5.1.7"
   }
 }

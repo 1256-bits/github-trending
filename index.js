@@ -12,6 +12,7 @@ const VERBOSE = process.argv.includes("--verbose") || process.argv.includes("-v"
 let offline = process.argv.includes("--offline") || process.argv.includes("-f")
 let interval
 
+const colors = require('colors/safe')
 const sqlite = require("sqlite3")
 const db = new sqlite.Database("db.sqlite")
 const readline = require('node:readline').createInterface({
@@ -93,8 +94,8 @@ async function handleResponse (resp) {
 }
 
 function prettyPrint (record) {
-  console.log(`${record.name} by ${record.owner}\nID: ${record.id}\n${record.stars} stars`)
-  if (record.language) console.log(`Language: ${record.language}`)
+  console.log(colors.bold(`${record.name} by ${record.owner}\n`) + `ID: ${colors.green(record.id)}\n${colors.yellow(record.stars)} stars`)
+  if (record.language !== "null") console.log(`Language: ${record.language}`)
   console.log()
 }
 

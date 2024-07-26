@@ -1,9 +1,8 @@
 'use strict'
 // TODO: 
-// * Use command line argument for TIME_MIN
 // * Add force refresh
 // * Add repl
-const TIME_MIN = 5
+const TIME_MIN = getIntervalTime(process.argv)
 
 const sqlite = require("sqlite3")
 const db = new sqlite.Database("db.sqlite")
@@ -67,4 +66,19 @@ function pruneDatabase (_, data) {
         if (err) console.log(`Failed to prune records with error ${err}`)
       })
   }
+}
+
+function getIntervalTime (args) {
+  const defValue = 5
+  if (args.includes("--time")) {
+    const index = args.indexOf("--time")
+    const value = parseInt(args[index + 1])
+    return !isNaN(value) ? args[index + 1] : defValue
+  }
+  else if (args.includes("-t")) {
+    const index = args.indexOf("-t")
+    const value = parseInt(args[index + 1])
+    return !isNaN(value) ? args[index + 1] : defValue
+  }
+  return defValue
 }

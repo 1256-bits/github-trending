@@ -1,4 +1,8 @@
 'use strict'
+// TODO: 
+// * Use command line argument for TIME_MIN
+// * Add force refresh
+// * Add repl
 const TIME_MIN = 5
 
 const sqlite = require("sqlite3")
@@ -16,15 +20,15 @@ async function get_trending_repos () {
   return results
 }
 
-function main () {
-  main_loop()
-  setInterval(main_loop, TIME_MIN * 60 * 1000)
+async function main () {
+  await main_loop()
   db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
+  setInterval(main_loop, TIME_MIN * 60 * 1000)
 }
 
 function createTable (_, row) {
   if (row != null) return
-  db.run("CREATE TABLE repos (id int, name varchar(255), owner varchar(255), language varchar(255), stars int, PRIMARY KEY id")
+  db.run("CREATE TABLE repos (id int, name varchar(255), owner varchar(255), language varchar(255), stars int)")
 }
 
 function updateOrInsert (row, item) {
@@ -39,13 +43,16 @@ function updateOrInsert (row, item) {
 
 async function main_loop () {
   const data = await get_trending_repos()
-  data.each(item => {
+  data.forEach(item => {
+    // The number of items is fixed at 30, so making a query for each item is probably fine.
     db.get(`SELECT * FROM repos WHERE id = ${item.id}`, (_, row) => updateOrInsert(row, item))
   })
+  db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
 }
 
 function pruneDatabase (_, data) {
+  if (data == null) return // Exit if the table has no rows
   if (data.length > 30) {
-    db.run("DELETE FROM repos WHERE stars < (SELECT * FROM tee ORDER BY stars LIMIT 1 OFFSET 30)")
+    db.run("DELETE FROM repos WHERE stars < (SELECT * FROM tee ORDER BY stars LIMIT -1 OFFSET 30)")
   }
 }

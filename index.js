@@ -37,13 +37,13 @@ function createTable (_, row) {
 function updateOrInsert (row, item) {
   // Insert new row if it is not in the DB. Update the row if the star count has changed. Otherwise do nothing
   if (row == null) {
-    db.get(`INSERT INTO repos VALUES (${item.id}, ${item.name}, ${item.ownder}, ${item.language}, ${item.stars})`,
+    db.get(`INSERT INTO repos VALUES ('${item.id}', '${item.name}', '${item.ownder}', '${item.language}', '${item.stars}')`,
       (err) => {
         console.log("Failed to insert row ", item, ` with error ${err}`)
       })
   }
   else if (row.stars !== item.stars) {
-    db.get(`UPDATE repos SET stars = ${item.stars} WHERE id = ${item.id}`,
+    db.get(`UPDATE repos SET stars = '${item.stars}' WHERE id = '${item.id}'`,
       (err) => {
         console.log("Failed to update row ", row, " to ", item, ` with error ${err}`)
       })
@@ -54,7 +54,7 @@ async function main_loop () {
   const data = await get_trending_repos()
   data.forEach(item => {
     // The number of items is fixed at 30, so making a query for each item is probably fine.
-    db.get(`SELECT * FROM repos WHERE id = ${item.id}`, (_, row) => updateOrInsert(row, item))
+    db.get(`SELECT * FROM repos WHERE id = '${item.id}'`, (_, row) => updateOrInsert(row, item))
   })
   db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
 }

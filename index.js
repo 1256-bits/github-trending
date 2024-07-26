@@ -1,7 +1,7 @@
+#!/bin/node
 'use strict'
 // TODO: 
 // * Add force refresh
-// * Add repl
 if (process.argv.includes("-h") || process.argv.includes("--help")) {
   printHelp("cli")
   process.exit()
@@ -41,14 +41,14 @@ async function main () {
   readline.on("line", repl)
 }
 
-function repl (answer) {
-  handleResponse(answer)
+async function repl (answer) {
+  await handleResponse(answer)
   readline.prompt()
 }
 
-function handleResponse (resp) {
+async function handleResponse (resp) {
   const chunks = resp.split(" ")
-  switch(chunks[0]) {
+  switch (chunks[0]) {
     case "?":
       printHelp()
       break
@@ -57,22 +57,32 @@ function handleResponse (resp) {
       readline.close()
       process.exit()
     case "list":
-      db.all("SELECT * FROM repos", (err, result) => {
-        if (err) console.log(err)
-        console.log(result)
+      return new Promise(resolve => {
+        db.all("SELECT * FROM repos", (err, result) => {
+          if (err) console.log(err)
+          result.forEach(item => prettyPrint(item))
+          resolve()
+        })
       })
-      break
     case "get":
       const column = isNaN(parseInt(chunks[1])) ? "name" : "id" // Technically fails if the name is just numbers. Doesn't matter in this case.
       const value = column === "id" ? parseInt(chunks[1]) : `'${chunks[1]}'`
-      db.get(`SELECT * FROM repos WHERE ${column} = ${value}`, (err, result) => {
-        if (err) console.log(err)
-        console.log(result)
+      return new Promise(resolve => {
+        db.get(`SELECT * FROM repos WHERE ${column} = ${value}`, (err, result) => {
+          if (err) console.log(err)
+          prettyPrint(result)
+          resolve()
+        })
       })
-      break
     default:
       console.log("Unknown command")
   }
+}
+
+function prettyPrint (record) {
+  console.log(`${record.name} by ${record.owner}\nID: ${record.id}\n${record.stars} stars`)
+  if (record.language) console.log(`Language: ${record.language}`)
+  console.log()
 }
 
 function createTable (_, row) {
@@ -137,19 +147,19 @@ function getIntervalTime (args) {
 
 function printHelp (type = "repl") { // type: "repl" | "cli"
   console.log("Github trending repos v1")
-  const helpOptions = type === "repl" ? 
-  [
-    { command: "get <ID | NAME>", info: "find a repository by id or name"},
-    { command: "list", info: "list all repositories"},
-    { command: "refresh", info: "force refresh the database"},
-    { command: "?", info: "print this message"},
-    { command: "q", info: "exit" }
-  ] :
-  [
-    {command: "-t --time", info: "Set time interval to refetch the data"},
-    {command: "-v --verbose", info: "Launch with logging"},
-    {command: "-h --help", info: "Print this message"}
-  ]
+  const helpOptions = type === "repl" ?
+    [
+      { command: "get <ID | NAME>", info: "find a repository by id or name" },
+      { command: "list", info: "list all repositories" },
+      { command: "refresh", info: "force refresh the database" },
+      { command: "?", info: "print this message" },
+      { command: "q", info: "exit" }
+    ] :
+    [
+      { command: "-t --time", info: "Set time interval to refetch the data" },
+      { command: "-v --verbose", info: "Launch with logging" },
+      { command: "-h --help", info: "Print this message" }
+    ]
   const longestMsgLen = Object.keys(helpOptions).sort((a, b) => a.length < b.length ? 1 : -1)[0].length
   helpOptions.forEach(item => {
     const commandPretty = item.command.length < longestMsgLen ? item.command.padEnd(longestMsgLen - item.command.length) : item.command

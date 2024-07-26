@@ -50,9 +50,11 @@ async function handleResponse (resp) {
   const chunks = resp.split(" ")
   switch (chunks[0]) {
     case "?":
+    case "help":
       printHelp()
       break
     case "q":
+    case "quit":
       db.close()
       readline.close()
       process.exit()
@@ -152,17 +154,17 @@ function printHelp (type = "repl") { // type: "repl" | "cli"
       { command: "get <ID | NAME>", info: "find a repository by id or name" },
       { command: "list", info: "list all repositories" },
       { command: "refresh", info: "force refresh the database" },
-      { command: "?", info: "print this message" },
-      { command: "q", info: "exit" }
+      { command: "? help", info: "print this message" },
+      { command: "q quit", info: "exit" }
     ] :
     [
       { command: "-t --time", info: "Set time interval to refetch the data" },
       { command: "-v --verbose", info: "Launch with logging" },
       { command: "-h --help", info: "Print this message" }
     ]
-  const longestMsgLen = Object.keys(helpOptions).sort((a, b) => a.length < b.length ? 1 : -1)[0].length
+  const longestMsgLen = helpOptions.map(item => item.command.length).sort((a, b) => a > b ? -1 : 1)[0]
   helpOptions.forEach(item => {
-    const commandPretty = item.command.length < longestMsgLen ? item.command.padEnd(longestMsgLen - item.command.length) : item.command
+    const commandPretty = item.command.length < longestMsgLen ? item.command.padEnd(longestMsgLen) : item.command
     console.log(`${commandPretty} - ${item.info}`)
   })
   console.log()

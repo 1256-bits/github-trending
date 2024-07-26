@@ -9,14 +9,20 @@ if (process.argv.includes("-h") || process.argv.includes("--help")) {
 
 const TIME_MIN = getIntervalTime(process.argv)
 const VERBOSE = process.argv.includes("--verbose") || process.argv.includes("-v")
+let interval
 
 const sqlite = require("sqlite3")
 const db = new sqlite.Database("db.sqlite")
+const readline = require('node:readline').createInterface({
+  input: process.stdin,
+  output: process.stdout
+})
+readline.setPrompt("> ")
 
 db.get("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'repos'", createTable)
 main()
 
-async function get_trending_repos () {
+async function getTrendingRepos () {
   const response = await fetch("https://api.github.com/search/repositories?q=stars:>=100000&sort=stars&order=desc")
   const json = await response.json()
   const results = json.items.map(item => {
@@ -28,9 +34,20 @@ async function get_trending_repos () {
 
 async function main () {
   printHelp()
-  await main_loop()
+  await mainLoop()
   db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
-  setInterval(main_loop, TIME_MIN * 60 * 1000)
+  interval = setInterval(mainLoop, TIME_MIN * 60 * 1000)
+  readline.prompt()
+  readline.on("line", repl)
+}
+
+function repl (answer) {
+  handleResponse(answer)
+  readline.prompt()
+}
+
+function handleResponse (resp) {
+  console.log(`Handling ${resp}`)
 }
 
 function createTable (_, row) {
@@ -58,8 +75,8 @@ function updateOrInsert (row, item) {
   }
 }
 
-async function main_loop () {
-  const data = await get_trending_repos()
+async function mainLoop () {
+  const data = await getTrendingRepos()
   data.forEach(item => {
     // The number of items is fixed at 30, so making a query for each item is probably fine.
     db.get(`SELECT * FROM repos WHERE id = '${item.id}'`, (_, row) => updateOrInsert(row, item))

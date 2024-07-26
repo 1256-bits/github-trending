@@ -3,6 +3,7 @@
 // * Add force refresh
 // * Add repl
 const TIME_MIN = getIntervalTime(process.argv)
+const VERBOSE = process.argv.includes("--verbose")
 
 const sqlite = require("sqlite3")
 const db = new sqlite.Database("db.sqlite")
@@ -20,6 +21,7 @@ async function get_trending_repos () {
 }
 
 async function main () {
+  printHelp()
   await main_loop()
   db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
   setInterval(main_loop, TIME_MIN * 60 * 1000)
@@ -81,4 +83,21 @@ function getIntervalTime (args) {
     return !isNaN(value) ? args[index + 1] : defValue
   }
   return defValue
+}
+
+function printHelp () {
+  console.log("Github trending repos v1")
+  const helpOptions = {
+    "get <ID | NAME>": "find a repository by id or name",
+    "list": "list all repositories",
+    "refresh": "force refresh the database",
+    "?": "print this message",
+    "q": "exit"
+  }
+  const longestMsgLen = Object.keys(helpOptions).sort((a, b) => a.length < b.length ? 1 : -1)[0].length
+  for (let key in helpOptions) {
+    const keyPretty = key.length < longestMsgLen ? key.padEnd(longestMsgLen - key.length) : key
+    console.log(`${keyPretty} - ${helpOptions[key]}`)
+  }
+  console.log()
 }

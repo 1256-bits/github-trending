@@ -1,7 +1,6 @@
 #!/bin/node
 'use strict'
-// TODO: 
-// * Add force refresh
+
 if (process.argv.includes("-h") || process.argv.includes("--help")) {
   printHelp("cli")
   process.exit()
@@ -22,6 +21,7 @@ const readline = require('node:readline').createInterface({
 readline.setPrompt("> ")
 
 db.get("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'repos'", createTable)
+printHelp()
 main()
 
 async function getTrendingRepos () {
@@ -35,7 +35,6 @@ async function getTrendingRepos () {
 }
 
 async function main () {
-  printHelp()
   if (!offline) {
     console.log("Fetching data from Github")
     try {
@@ -93,6 +92,14 @@ async function handleResponse (resp) {
           }
         })
       })
+    case "refresh":
+      if (offline) {
+        console.log("Refresh is disabled in offline mode.")
+        return
+      }
+      clearInterval(interval)
+      main()
+      break
     default:
       console.log("Unknown command")
   }

@@ -1,16 +1,12 @@
 #!/bin/node
 'use strict'
-
+// Process help flag
 if (process.argv.includes("-h") || process.argv.includes("--help")) {
   printHelp("cli")
   process.exit()
 }
 
-const TIME_MIN = getIntervalTime(process.argv)
-const VERBOSE = process.argv.includes("--verbose") || process.argv.includes("-v")
-let offline = process.argv.includes("--offline") || process.argv.includes("-f")
-let interval
-
+// Module imports
 const colors = require('colors/safe')
 const sqlite = require("sqlite3")
 const db = new sqlite.Database("db.sqlite")
@@ -18,21 +14,18 @@ const readline = require('node:readline').createInterface({
   input: process.stdin,
   output: process.stdout
 })
-readline.setPrompt("> ")
 
+// Constants and global variables
+const TIME_MIN = getIntervalTime(process.argv)
+const VERBOSE = process.argv.includes("--verbose") || process.argv.includes("-v")
+let offline = process.argv.includes("--offline") || process.argv.includes("-f")
+let interval
+
+// Misc initialization
+readline.setPrompt("> ")
 db.get("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'repos'", createTable)
 printHelp()
 main()
-
-async function getTrendingRepos () {
-  const response = await fetch("https://api.github.com/search/repositories?q=stars:>=100000&sort=stars&order=desc")
-  const json = await response.json()
-  const results = json.items.map(item => {
-    return { id: item.id, name: item.name, owner: item.owner.login, language: item.language, stars: item.stargazers_count }
-  })
-  if (VERBOSE) console.log("Fetch complete")
-  return results
-}
 
 async function main () {
   if (!offline) {
@@ -50,6 +43,16 @@ async function main () {
   }
   readline.prompt()
   readline.on("line", repl)
+}
+
+async function getTrendingRepos () {
+  const response = await fetch("https://api.github.com/search/repositories?q=stars:>=100000&sort=stars&order=desc")
+  const json = await response.json()
+  const results = json.items.map(item => {
+    return { id: item.id, name: item.name, owner: item.owner.login, language: item.language, stars: item.stargazers_count }
+  })
+  if (VERBOSE) console.log("Fetch complete")
+  return results
 }
 
 async function repl (answer) {
@@ -136,15 +139,6 @@ function updateOrInsert (row, item) {
   }
 }
 
-async function mainLoop () {
-  const data = await getTrendingRepos()
-  data.forEach(item => {
-    // The number of items is fixed at 30, so making a query for each item is probably fine.
-    db.get(`SELECT * FROM repos WHERE id = '${item.id}'`, (_, row) => updateOrInsert(row, item))
-  })
-  db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
-}
-
 function pruneDatabase (_, data) {
   if (data == null) return // Exit if the table has no rows
   if (data.length > 30) {
@@ -153,6 +147,20 @@ function pruneDatabase (_, data) {
         if (err) console.log(`Failed to prune records with error ${err}`)
       })
     if (VERBOSE) console.log("Database pruned")
+  }
+}
+
+async function mainLoop () {
+  try {
+    const data = await getTrendingRepos()
+    data.forEach(item => {
+      // The number of items is fixed at 30, so making a query for each item is probably fine.
+      db.get(`SELECT * FROM repos WHERE id = '${item.id}'`, (_, row) => updateOrInsert(row, item))
+    })
+    db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
+  } catch {
+    console.error("Fetch failed. Entering offline mode")
+    offline = true
   }
 }
 

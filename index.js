@@ -47,7 +47,32 @@ function repl (answer) {
 }
 
 function handleResponse (resp) {
-  console.log(`Handling ${resp}`)
+  const chunks = resp.split(" ")
+  switch(chunks[0]) {
+    case "?":
+      printHelp()
+      break
+    case "q":
+      db.close()
+      readline.close()
+      process.exit()
+    case "list":
+      db.all("SELECT * FROM repos", (err, result) => {
+        if (err) console.log(err)
+        console.log(result)
+      })
+      break
+    case "get":
+      const column = isNaN(parseInt(chunks[1])) ? "name" : "id" // Technically fails if the name is just numbers. Doesn't matter in this case.
+      const value = column === "id" ? parseInt(chunks[1]) : `'${chunks[1]}'`
+      db.get(`SELECT * FROM repos WHERE ${column} = ${value}`, (err, result) => {
+        if (err) console.log(err)
+        console.log(result)
+      })
+      break
+    default:
+      console.log("Unknown command")
+  }
 }
 
 function createTable (_, row) {

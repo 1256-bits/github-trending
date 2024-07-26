@@ -87,7 +87,7 @@ function createTable (_, row) {
 function updateOrInsert (row, item) {
   // Insert new row if it is not in the DB. Update the row if the star count has changed. Otherwise do nothing
   if (row == null) {
-    db.get(`INSERT INTO repos VALUES ('${item.id}', '${item.name}', '${item.ownder}', '${item.language}', '${item.stars}')`,
+    db.get(`INSERT INTO repos VALUES ('${item.id}', '${item.name}', '${item.owner}', '${item.language}', '${item.stars}')`,
       (err) => {
         if (err) console.log("Failed to insert row ", item, ` with error ${err}`)
       })

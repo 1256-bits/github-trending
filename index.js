@@ -37,7 +37,7 @@ async function getTrendingRepos () {
 async function main () {
   printHelp()
   if (!offline) {
-  console.log("Fetching data from Github")
+    console.log("Fetching data from Github")
     try {
       await mainLoop()
       db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
@@ -80,12 +80,17 @@ async function handleResponse (resp) {
       })
     case "get":
       const column = isNaN(parseInt(chunks[1])) ? "name" : "id" // Technically fails if the name is just numbers. Doesn't matter in this case.
-      const value = column === "id" ? parseInt(chunks[1]) : `'${chunks[1]}'`
+      const value = column === "id" ? parseInt(chunks[1]) : `'${chunks[1].replaceAll("'", "")}'`
       return new Promise(resolve => {
         db.get(`SELECT * FROM repos WHERE ${column} = ${value}`, (err, result) => {
           if (err) console.log(err)
-          prettyPrint(result)
-          resolve()
+          if (result == null) {
+            console.log(`${value} not found`)
+            resolve()
+          } else {
+            prettyPrint(result)
+            resolve()
+          }
         })
       })
     default:

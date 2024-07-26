@@ -30,7 +30,7 @@ function createTable (_, row) {
   if (row != null) return
   db.get("CREATE TABLE repos (id int, name varchar(255), owner varchar(255), language varchar(255), stars int)",
     (err) => {
-      console.log(`Failed to create table with error ${err})`)
+      if (err) console.log(`Failed to create table with error ${err})`)
     })
 }
 
@@ -39,13 +39,13 @@ function updateOrInsert (row, item) {
   if (row == null) {
     db.get(`INSERT INTO repos VALUES ('${item.id}', '${item.name}', '${item.ownder}', '${item.language}', '${item.stars}')`,
       (err) => {
-        console.log("Failed to insert row ", item, ` with error ${err}`)
+        if (err) console.log("Failed to insert row ", item, ` with error ${err}`)
       })
   }
   else if (row.stars !== item.stars) {
     db.get(`UPDATE repos SET stars = '${item.stars}' WHERE id = '${item.id}'`,
       (err) => {
-        console.log("Failed to update row ", row, " to ", item, ` with error ${err}`)
+        if (err) console.log("Failed to update row ", row, " to ", item, ` with error ${err}`)
       })
   }
 }
@@ -64,7 +64,7 @@ function pruneDatabase (_, data) {
   if (data.length > 30) {
     db.get("DELETE FROM repos WHERE stars < (SELECT * FROM repos ORDER BY stars LIMIT 1 OFFSET 30)",
       (err) => {
-        console.log(`Failed to prune records with error ${err}`)
+        if (err) console.log(`Failed to prune records with error ${err}`)
       })
   }
 }

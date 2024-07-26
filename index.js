@@ -43,6 +43,10 @@ async function main () {
   }
   readline.prompt()
   readline.on("line", repl)
+  readline.on("SIGINT", () => {
+    db.close()
+    process.exit()
+  })
 }
 
 async function getTrendingRepos () {
@@ -101,6 +105,7 @@ async function handleResponse (resp) {
         return
       }
       clearInterval(interval)
+      readline.removeAllListeners()
       main()
       break
     default:

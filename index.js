@@ -2,8 +2,13 @@
 // TODO: 
 // * Add force refresh
 // * Add repl
+if (process.argv.includes("-h") || process.argv.includes("--help")) {
+  printHelp("cli")
+  process.exit()
+}
+
 const TIME_MIN = getIntervalTime(process.argv)
-const VERBOSE = process.argv.includes("--verbose")
+const VERBOSE = process.argv.includes("--verbose") || process.argv.includes("-v")
 
 const sqlite = require("sqlite3")
 const db = new sqlite.Database("db.sqlite")
@@ -17,6 +22,7 @@ async function get_trending_repos () {
   const results = json.items.map(item => {
     return { id: item.id, name: item.name, owner: item.owner.login, language: item.language, stars: item.stargazers_count }
   })
+  if (VERBOSE) console.log("Fetch complete")
   return results
 }
 
@@ -33,6 +39,7 @@ function createTable (_, row) {
     (err) => {
       if (err) console.log(`Failed to create table with error ${err})`)
     })
+  if (VERBOSE) console.log("Table created")
 }
 
 function updateOrInsert (row, item) {
@@ -67,6 +74,7 @@ function pruneDatabase (_, data) {
       (err) => {
         if (err) console.log(`Failed to prune records with error ${err}`)
       })
+    if (VERBOSE) console.log("Database pruned")
   }
 }
 
@@ -85,19 +93,25 @@ function getIntervalTime (args) {
   return defValue
 }
 
-function printHelp () {
+function printHelp (type = "repl") { // type: "repl" | "cli"
   console.log("Github trending repos v1")
-  const helpOptions = {
-    "get <ID | NAME>": "find a repository by id or name",
-    "list": "list all repositories",
-    "refresh": "force refresh the database",
-    "?": "print this message",
-    "q": "exit"
-  }
+  const helpOptions = type === "repl" ? 
+  [
+    { command: "get <ID | NAME>", info: "find a repository by id or name"},
+    { command: "list", info: "list all repositories"},
+    { command: "refresh", info: "force refresh the database"},
+    { command: "?", info: "print this message"},
+    { command: "q", info: "exit" }
+  ] :
+  [
+    {command: "-t --time", info: "Set time interval to refetch the data"},
+    {command: "-v --verbose", info: "Launch with logging"},
+    {command: "-h --help", info: "Print this message"}
+  ]
   const longestMsgLen = Object.keys(helpOptions).sort((a, b) => a.length < b.length ? 1 : -1)[0].length
-  for (let key in helpOptions) {
-    const keyPretty = key.length < longestMsgLen ? key.padEnd(longestMsgLen - key.length) : key
-    console.log(`${keyPretty} - ${helpOptions[key]}`)
-  }
+  helpOptions.forEach(item => {
+    const commandPretty = item.command.length < longestMsgLen ? item.command.padEnd(longestMsgLen - item.command.length) : item.command
+    console.log(`${commandPretty} - ${item.info}`)
+  })
   console.log()
 }

@@ -28,16 +28,25 @@ async function main () {
 
 function createTable (_, row) {
   if (row != null) return
-  db.run("CREATE TABLE repos (id int, name varchar(255), owner varchar(255), language varchar(255), stars int)")
+  db.get("CREATE TABLE repos (id int, name varchar(255), owner varchar(255), language varchar(255), stars int)",
+    (err) => {
+      console.log(`Failed to create table with error ${err})`)
+    })
 }
 
 function updateOrInsert (row, item) {
   // Insert new row if it is not in the DB. Update the row if the star count has changed. Otherwise do nothing
   if (row == null) {
-    db.run(`INSERT INTO repos VALUES (${row.id}, ${row.name}, ${row.ownder}, ${row.language}, ${row.stars}`)
+    db.get(`INSERT INTO repos VALUES (${item.id}, ${item.name}, ${item.ownder}, ${item.language}, ${item.stars})`,
+      (err) => {
+        console.log("Failed to insert row ", item, ` with error ${err}`)
+      })
   }
   else if (row.stars !== item.stars) {
-    db.run(`UPDATE repos SET stars = ${item.stars} WHERE id = ${item.id}`)
+    db.get(`UPDATE repos SET stars = ${item.stars} WHERE id = ${item.id}`,
+      (err) => {
+        console.log("Failed to update row ", row, " to ", item, ` with error ${err}`)
+      })
   }
 }
 
@@ -53,6 +62,9 @@ async function main_loop () {
 function pruneDatabase (_, data) {
   if (data == null) return // Exit if the table has no rows
   if (data.length > 30) {
-    db.run("DELETE FROM repos WHERE stars < (SELECT * FROM tee ORDER BY stars LIMIT -1 OFFSET 30)")
+    db.get("DELETE FROM repos WHERE stars < (SELECT * FROM repos ORDER BY stars LIMIT 1 OFFSET 30)",
+      (err) => {
+        console.log(`Failed to prune records with error ${err}`)
+      })
   }
 }

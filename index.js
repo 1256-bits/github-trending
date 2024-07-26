@@ -9,6 +9,7 @@ if (process.argv.includes("-h") || process.argv.includes("--help")) {
 
 const TIME_MIN = getIntervalTime(process.argv)
 const VERBOSE = process.argv.includes("--verbose") || process.argv.includes("-v")
+let offline = process.argv.includes("--offline") || process.argv.includes("-f")
 let interval
 
 const sqlite = require("sqlite3")
@@ -34,9 +35,19 @@ async function getTrendingRepos () {
 
 async function main () {
   printHelp()
-  await mainLoop()
-  db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
-  interval = setInterval(mainLoop, TIME_MIN * 60 * 1000)
+  if (!offline) {
+  console.log("Fetching data from Github")
+    try {
+      await mainLoop()
+      db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
+      interval = setInterval(mainLoop, TIME_MIN * 60 * 1000)
+    } catch {
+      console.error("Fetch failed. Entering offline mode")
+      offline = true
+    }
+  } else {
+    console.log("Launching in offline mode")
+  }
   readline.prompt()
   readline.on("line", repl)
 }
@@ -160,7 +171,8 @@ function printHelp (type = "repl") { // type: "repl" | "cli"
     [
       { command: "-t --time", info: "Set time interval to refetch the data" },
       { command: "-v --verbose", info: "Launch with logging" },
-      { command: "-h --help", info: "Print this message" }
+      { command: "-h --help", info: "Print this message" },
+      { command: "-f --offline", info: "Launch in offline mode. No data is fetched. Refresh is disabled" }
     ]
   const longestMsgLen = helpOptions.map(item => item.command.length).sort((a, b) => a > b ? -1 : 1)[0]
   helpOptions.forEach(item => {

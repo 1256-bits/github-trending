@@ -114,7 +114,7 @@ async function handleResponse (resp) {
 
 function prettyPrint (record) {
   console.log(colors.bold(`${record.name} by ${record.owner}\n`) + `ID: ${colors.green(record.id)}\n${colors.yellow(record.stars)} stars`)
-  if (record.language !== "null") console.log(`Language: ${record.language}`)
+  if (record.language != null) console.log(`Language: ${record.language}`)
   console.log()
 }
 

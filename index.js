@@ -141,8 +141,9 @@ function pruneDatabase (_, data) {
 async function mainLoop () {
   try {
     const data = await getTrendingRepos()
-    const dataProcessed = data.map(item => `('${item.id}', '${item.name}', '${item.owner}', '${item.language}', '${item.stars}')`).join(',')
-    db.run(`INSERT INTO repos VALUES ${dataProcessed} ON CONFLICT DO UPDATE SET stars = excluded.stars`)
+    const template = data.flatMap(() => '(?, ?, ?, ?, ?)').join(',')
+    const dataProcessed = data.flatMap(item => Object.values(item))
+    db.run(`INSERT INTO repos (id, name, owner, language, stars) VALUES ${template} ON CONFLICT DO UPDATE SET stars = excluded.stars`, dataProcessed)
     db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
   } catch {
     console.error("Fetch failed. Entering offline mode")

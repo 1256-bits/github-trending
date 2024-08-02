@@ -85,9 +85,9 @@ async function handleResponse (resp) {
       })
     case "get":
       const column = isNaN(parseInt(chunks[1])) ? "name" : "id" // Technically fails if the name is just numbers. Doesn't matter in this case.
-      const value = column === "id" ? parseInt(chunks[1]) : `'${chunks[1].replaceAll("'", "")}'`
+      const value = column === "id" ? parseInt(chunks[1]) : chunks[1]
       return new Promise(resolve => {
-        db.get(`SELECT * FROM repos WHERE ${column} = ${value}`, (err, result) => {
+        db.get(`SELECT * FROM repos WHERE ${column} = ?`, value, (err, result) => {
           if (err) console.log(err)
           if (result == null) {
             console.log(`${value} not found`)

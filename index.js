@@ -32,7 +32,6 @@ async function main () {
     console.log("Fetching data from Github")
     try {
       await mainLoop()
-      db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
       interval = setInterval(mainLoop, TIME_MIN * 60 * 1000)
     } catch {
       console.error("Fetch failed. Entering offline mode")
@@ -155,7 +154,6 @@ async function mainLoop () {
 
 function updateOrInsert (row, item) {
   // Insert new row if it is not in the DB. Update the row if the star count has changed. Otherwise do nothing
-  "INSERT 
   if (row == null) {
     db.get(`INSERT INTO repos VALUES ('${item.id}', '${item.name}', '${item.owner}', '${item.language}', '${item.stars}')`,
       (err) => {

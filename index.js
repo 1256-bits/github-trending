@@ -121,27 +121,11 @@ function prettyPrint (record) {
 
 function createTable (_, row) {
   if (row != null) return
-  db.get("CREATE TABLE repos (id int, name varchar(255), owner varchar(255), language varchar(255), stars int)",
+  db.get("CREATE TABLE repos (id int UNIQUE, name varchar(255), owner varchar(255), language varchar(255), stars int)",
     (err) => {
       if (err) console.log(`Failed to create table with error ${err})`)
     })
   if (VERBOSE) console.log("Table created")
-}
-
-function updateOrInsert (row, item) {
-  // Insert new row if it is not in the DB. Update the row if the star count has changed. Otherwise do nothing
-  if (row == null) {
-    db.get(`INSERT INTO repos VALUES ('${item.id}', '${item.name}', '${item.owner}', '${item.language}', '${item.stars}')`,
-      (err) => {
-        if (err) console.log("Failed to insert row ", item, ` with error ${err}`)
-      })
-  }
-  else if (row.stars !== item.stars) {
-    db.get(`UPDATE repos SET stars = '${item.stars}' WHERE id = '${item.id}'`,
-      (err) => {
-        if (err) console.log("Failed to update row ", row, " to ", item, ` with error ${err}`)
-      })
-  }
 }
 
 function pruneDatabase (_, data) {
@@ -168,6 +152,24 @@ async function mainLoop () {
     offline = true
   }
 }
+
+function updateOrInsert (row, item) {
+  // Insert new row if it is not in the DB. Update the row if the star count has changed. Otherwise do nothing
+  "INSERT 
+  if (row == null) {
+    db.get(`INSERT INTO repos VALUES ('${item.id}', '${item.name}', '${item.owner}', '${item.language}', '${item.stars}')`,
+      (err) => {
+        if (err) console.log("Failed to insert row ", item, ` with error ${err}`)
+      })
+  }
+  else if (row.stars !== item.stars) {
+    db.get(`UPDATE repos SET stars = '${item.stars}' WHERE id = '${item.id}'`,
+      (err) => {
+        if (err) console.log("Failed to update row ", row, " to ", item, ` with error ${err}`)
+      })
+  }
+}
+
 
 function getIntervalTime (args) {
   const defValue = 5

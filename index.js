@@ -1,4 +1,4 @@
-#!/bin/node
+#!/usr/bin/env node
 'use strict'
 // Process help flag
 if (process.argv.includes("-h") || process.argv.includes("--help")) {

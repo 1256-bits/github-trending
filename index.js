@@ -141,33 +141,13 @@ function pruneDatabase (_, data) {
 async function mainLoop () {
   try {
     const data = await getTrendingRepos()
-    data.forEach(item => {
-      // The number of items is fixed at 30, so making a query for each item is probably fine.
-      db.get(`SELECT * FROM repos WHERE id = '${item.id}'`, (_, row) => updateOrInsert(row, item))
-    })
-    db.get("SELECT COUNT(*) AS 'length' FROM repos", pruneDatabase)
+    const dataProcessed = data.map(item => `('${item.id}', '${item.name}', '${item.owner}', '${item.language}', '${item.stars}')`).join(',')
+    db.run(`INSERT INTO repos VALUES ${dataProcessed} ON CONFLICT DO UPDATE SET stars = excluded.stars`)
   } catch {
     console.error("Fetch failed. Entering offline mode")
     offline = true
   }
 }
-
-function updateOrInsert (row, item) {
-  // Insert new row if it is not in the DB. Update the row if the star count has changed. Otherwise do nothing
-  if (row == null) {
-    db.get(`INSERT INTO repos VALUES ('${item.id}', '${item.name}', '${item.owner}', '${item.language}', '${item.stars}')`,
-      (err) => {
-        if (err) console.log("Failed to insert row ", item, ` with error ${err}`)
-      })
-  }
-  else if (row.stars !== item.stars) {
-    db.get(`UPDATE repos SET stars = '${item.stars}' WHERE id = '${item.id}'`,
-      (err) => {
-        if (err) console.log("Failed to update row ", row, " to ", item, ` with error ${err}`)
-      })
-  }
-}
-
 
 function getIntervalTime (args) {
   const defValue = 5
